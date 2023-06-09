@@ -1,0 +1,17 @@
+# fly.toml app configuration file generated for gliew-demo on 2023-06-12T10:45:19+02:00
+#
+# See https://fly.io/docs/reference/configuration/ for information about how to use this file.
+#
+
+app = "gliew-demo"
+primary_region = "ams"
+
+[build]
+  image = "granra/gliew_demo:0.1.4"
+
+[http_service]
+  internal_port = 8080
+  force_https = true
+  auto_stop_machines = true
+  auto_start_machines = true
+  min_machines_running = 0
