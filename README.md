@@ -1,9 +1,8 @@
 # gliew_demo
 
-[![Package Version](https://img.shields.io/hexpm/v/gliew_demo)](https://hex.pm/packages/gliew_demo)
-[![Hex Docs](https://img.shields.io/badge/hex-docs-ffaff3)](https://hexdocs.pm/gliew_demo/)
+A demo project to test out [gliew](https://github.com/arnarg/gliew) features.
 
-A Gleam project
+You can view a hosted version [here.](https://gliew-demo.fly.dev/)
 
 ## Quick start
 
