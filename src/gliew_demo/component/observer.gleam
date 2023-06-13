@@ -56,12 +56,13 @@ fn process_rows(context: ObserverContext) {
         get_processes()
         |> sort_by_memory
     }
-    |> list.map(fn(p) {
+    |> list.index_map(fn(i, p) {
       html.tr(
         case p.pid {
           pid if pid == you -> [attrs.class("you")]
           _ -> []
-        },
+        }
+        |> list.prepend(attrs.id("proc-" <> int.to_string(i))),
         [
           html.td_text([], erl_format("~p", [p.pid])),
           html.td_text([], int.to_string(p.memory)),
