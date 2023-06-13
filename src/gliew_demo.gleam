@@ -18,6 +18,10 @@ fn layout(content: html.Node(a)) -> html.Node(a) {
       html.Head([
         html.title("gliew demo"),
         html.link([attrs.rel("stylesheet"), attrs.href("/style.css")]),
+        html.meta([
+          attrs.name("viewport"),
+          attrs.content("width=device-width, initial-scale=1"),
+        ]),
         gliew.script(),
       ]),
       html.Body(attrs: [], children: [content]),

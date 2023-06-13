@@ -1,5 +1,4 @@
 import gleam/int
-import gleam/string
 import gleam/list
 import gleam/option.{None, Some}
 import gleam/dynamic.{Dynamic}
@@ -19,16 +18,23 @@ pub type ObserverContext {
 pub fn observer(context: ObserverContext) {
   use assign <- gliew.live_mount(init_observer, with: context)
 
+  let you = process.self()
+
   let rows =
     case assign {
       Some(processes) -> processes
-      None -> get_processes()
+      None ->
+        get_processes()
+        |> sort_by_memory
     }
     |> list.map(fn(p) {
       html.tr(
-        [],
+        case p.pid {
+          pid if pid == you -> [attrs.class("you")]
+          _ -> []
+        },
         [
-          html.td_text([], string.inspect(p.pid)),
+          html.td_text([], erl_format("~p", [p.pid])),
           html.td_text([], int.to_string(p.memory)),
           html.td_text([], int.to_string(p.reductions)),
           html.td_text([], p.initial_call),
@@ -129,6 +135,7 @@ fn loop(msg: Message, state: State) {
       // Get all process data and send to subscribers
       let new_subs =
         get_processes()
+        |> sort_by_memory
         |> send_to_all(state.subscribers)
 
       // Send an update message to ourseleves after interval
@@ -193,6 +200,11 @@ fn get_process_info(pid: Pid) -> ProcessInfo {
   }
 }
 
+fn sort_by_memory(procs: List(ProcessInfo)) {
+  procs
+  |> list.sort(fn(a, b) { int.compare(b.memory, a.memory) })
+}
+
 fn cloc_to_string(cloc: #(Atom, Atom, Int, List(Dynamic))) {
   icall_to_string(#(cloc.0, cloc.1, cloc.2))
 }
@@ -208,3 +220,6 @@ external fn processes() -> List(Pid) =
 
 external fn process_info(Pid, List(Atom)) -> List(ProcessParam) =
   "erlang" "process_info"
+
+external fn erl_format(String, List(a)) -> String =
+  "io_lib" "format"

@@ -1,11 +1,11 @@
 :root {
   --color-gleam-pink: #ffaff3;
   --color-dark: #2f2f2f;
+  --color-light: #e5e5e5;
 }
 
 
 body {
-  font-size: xxx-large;
   font-family: sans-serif;
   margin: 0;
   color: var(--color-dark);
@@ -47,7 +47,7 @@ body {
   height: 1.3em;
   width: 100%;
   border-radius: 1em;
-  background-color: #e5e5e5;
+  background-color: var(--color-light);
 }
 
 .monitor-meter > .status {
@@ -71,6 +71,10 @@ table .theader {
   color: white;
 }
 
+table tr.you {
+  background-color: var(--color-light);
+}
+
 table th {
   text-align: left;
 }
@@ -83,13 +87,8 @@ table th, td {
   padding: 1em;
 }
 
-@media (min-width: 1200px) {
-  body {
-    font-size: large;
-  }
-
+@media (min-width: 700px) {
   .container {
-    font-size: medium;
     margin: auto;
     max-width: 1200px;
   }
