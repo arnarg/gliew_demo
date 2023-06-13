@@ -16,6 +16,35 @@ pub type ObserverContext {
 }
 
 pub fn observer(context: ObserverContext) {
+  html.div(
+    [],
+    [
+      html.table(
+        [attrs.Attr("cellspacing", "0"), attrs.Attr("cellpadding", "0")],
+        [
+          html.thead(
+            [],
+            [
+              html.tr(
+                [attrs.class("theader")],
+                [
+                  html.th_text([], "PID"),
+                  html.th_text([], "Memory"),
+                  html.th_text([], "Reductions"),
+                  html.th_text([], "Initial Call"),
+                  html.th_text([], "Current Function"),
+                ],
+              ),
+            ],
+          ),
+          process_rows(context),
+        ],
+      ),
+    ],
+  )
+}
+
+fn process_rows(context: ObserverContext) {
   use assign <- gliew.live_mount(init_observer, with: context)
 
   let you = process.self()
@@ -42,34 +71,8 @@ pub fn observer(context: ObserverContext) {
         ],
       )
     })
-    |> html.Fragment
 
-  html.div(
-    [gliew.morph()],
-    [
-      html.table(
-        [attrs.Attr("cellspacing", "0"), attrs.Attr("cellpadding", "0")],
-        [
-          html.tbody(
-            [],
-            [
-              html.tr(
-                [attrs.class("theader")],
-                [
-                  html.th_text([], "PID"),
-                  html.th_text([], "Memory"),
-                  html.th_text([], "Reductions"),
-                  html.th_text([], "Initial Call"),
-                  html.th_text([], "Current Function"),
-                ],
-              ),
-              rows,
-            ],
-          ),
-        ],
-      ),
-    ],
-  )
+  html.tbody([gliew.morph()], rows)
 }
 
 fn init_observer(context: ObserverContext) {
