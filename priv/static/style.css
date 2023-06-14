@@ -12,10 +12,20 @@ body {
 }
 
 .header {
+  display: flex;
+  justify-content: space-between;
   font-size: 1.5em;
   font-weight: bold;
   padding: 0.7em;
   background-color: var(--color-gleam-pink);
+}
+
+.header .links {
+  height: 1.2em;
+}
+
+.header img {
+  height: 100%;
 }
 
 .metrics > .title {

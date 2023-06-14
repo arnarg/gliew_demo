@@ -7,7 +7,7 @@ app = "gliew-demo"
 primary_region = "ams"
 
 [build]
-  image = "granra/gliew_demo:0.1.9"
+  image = "granra/gliew_demo:0.1.10"
 
 [http_service]
   internal_port = 8080

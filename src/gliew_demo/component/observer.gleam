@@ -1,18 +1,14 @@
 import gleam/int
 import gleam/list
 import gleam/option.{None, Some}
-import gleam/dynamic.{Dynamic}
-import gleam/function
-import gleam/otp/actor
-import gleam/erlang/process.{Pid, Subject}
-import gleam/erlang/atom.{Atom}
+import gleam/erlang/process
 import nakai/html
 import nakai/html/attrs
 import gliew
-import gliew_demo/component/util.{send_to_all}
+import gliew_demo/service/observer.{ByMemory, Observer, Sort}
 
 pub type ObserverContext {
-  ObserverContext(observer: Subject(Message))
+  ObserverContext(observer: Observer)
 }
 
 pub fn observer(context: ObserverContext) {
@@ -52,9 +48,7 @@ fn process_rows(context: ObserverContext) {
   let rows =
     case assign {
       Some(processes) -> processes
-      None ->
-        get_processes()
-        |> sort_by_memory
+      None -> observer.get_processes(Sort(ByMemory))
     }
     |> list.index_map(fn(i, p) {
       html.tr(
@@ -81,149 +75,10 @@ fn init_observer(context: ObserverContext) {
   let subject = process.new_subject()
 
   // Subscribe to monitor
-  process.send(context.observer, Subscribe(subject))
+  observer.subscribe(context.observer, subject)
 
   subject
 }
-
-// Observer actor --------------------------------------------
-
-pub type ProcessInfo {
-  ProcessInfo(
-    pid: Pid,
-    memory: Int,
-    reductions: Int,
-    initial_call: String,
-    current_location: String,
-  )
-}
-
-pub opaque type Message {
-  Update
-  Subscribe(subject: Subject(List(ProcessInfo)))
-}
-
-type State {
-  State(
-    self: Subject(Message),
-    interval: Int,
-    subscribers: List(Subject(List(ProcessInfo))),
-  )
-}
-
-pub fn start_observer(interval: Int) {
-  actor.start_spec(actor.Spec(
-    init: fn() {
-      // Create a subject for ourselves
-      let self = process.new_subject()
-
-      // Select our own messages
-      let selector =
-        process.new_selector()
-        |> process.selecting(self, function.identity)
-
-      // Send the initial update message
-      let _ = process.send_after(self, interval, Update)
-
-      // Actor ready
-      actor.Ready(State(self, interval, []), selector)
-    },
-    init_timeout: 1000,
-    loop: loop,
-  ))
-}
-
-fn loop(msg: Message, state: State) {
-  case msg {
-    Update -> {
-      // Get all process data and send to subscribers
-      let new_subs =
-        get_processes()
-        |> sort_by_memory
-        |> send_to_all(state.subscribers)
-
-      // Send an update message to ourseleves after interval
-      let _ = process.send_after(state.self, state.interval, Update)
-
-      actor.Continue(State(..state, subscribers: new_subs))
-    }
-    Subscribe(subject) -> {
-      // Continue actor with new subject subscribed
-      actor.Continue(
-        State(
-          ..state,
-          subscribers: state.subscribers
-          |> list.prepend(subject),
-        ),
-      )
-    }
-  }
-}
-
-type ProcessParam {
-  Memory(Int)
-  Reductions(Int)
-  InitialCall(#(Atom, Atom, Int))
-  CurrentLocation(#(Atom, Atom, Int, List(Dynamic)))
-}
-
-pub fn get_processes() -> List(ProcessInfo) {
-  processes()
-  |> list.map(get_process_info)
-}
-
-fn get_process_info(pid: Pid) -> ProcessInfo {
-  let info =
-    process_info(
-      pid,
-      [
-        atom.create_from_string("memory"),
-        atom.create_from_string("reductions"),
-        atom.create_from_string("initial_call"),
-        atom.create_from_string("current_location"),
-      ],
-    )
-
-  case info {
-    [
-      Memory(memory),
-      Reductions(reductions),
-      InitialCall(icall),
-      CurrentLocation(cloc),
-      ..
-    ] -> {
-      ProcessInfo(
-        pid,
-        memory,
-        reductions,
-        icall_to_string(icall),
-        cloc_to_string(cloc),
-      )
-    }
-    _ -> ProcessInfo(pid, 0, 0, "", "")
-  }
-}
-
-fn sort_by_memory(procs: List(ProcessInfo)) {
-  procs
-  |> list.sort(fn(a, b) { int.compare(b.memory, a.memory) })
-}
-
-fn cloc_to_string(cloc: #(Atom, Atom, Int, List(Dynamic))) {
-  icall_to_string(#(cloc.0, cloc.1, cloc.2))
-}
-
-fn icall_to_string(icall: #(Atom, Atom, Int)) {
-  atom.to_string(icall.0) <> ":" <> atom.to_string(icall.1) <> "/" <> int.to_string(
-    icall.2,
-  )
-}
-
-external fn processes() -> List(Pid) =
-  "erlang" "processes"
-
-external fn process_info(Pid, List(Atom)) -> List(ProcessParam) =
-  "erlang" "process_info"
 
 external fn erl_format(String, List(a)) -> String =
   "io_lib" "format"

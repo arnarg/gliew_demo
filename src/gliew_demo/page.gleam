@@ -1,16 +1,12 @@
-import gleam/erlang/process.{Subject}
 import nakai/html
 import nakai/html/attrs
-import gliew_demo/component/metrics.{Message as MonitorMessage, MetricsContext}
-import gliew_demo/component/observer.{
-  Message as ObserverMessage, ObserverContext,
-}
+import gliew_demo/service/monitor.{Monitor}
+import gliew_demo/service/observer.{Observer} as sobserver
+import gliew_demo/component/metrics.{MetricsContext}
+import gliew_demo/component/observer.{ObserverContext}
 
 pub type DashboardContext {
-  DashboardContext(
-    monitor: Subject(MonitorMessage),
-    observer: Subject(ObserverMessage),
-  )
+  DashboardContext(monitor: Monitor, observer: Observer)
 }
 
 // Dashboard view
@@ -19,7 +15,7 @@ pub fn dashboard(context: DashboardContext) {
     [attrs.class("container")],
     [
       header("gliew observer"),
-      metrics(context),
+      metrics(MetricsContext(context.monitor)),
       observer(ObserverContext(context.observer)),
     ],
   )
@@ -27,16 +23,30 @@ pub fn dashboard(context: DashboardContext) {
 
 // Header
 fn header(text: String) {
-  html.div([attrs.class("header")], [html.div_text([], text)])
+  html.div(
+    [attrs.class("header")],
+    [
+      html.div_text([attrs.class("title")], text),
+      html.div(
+        [attrs.class("links")],
+        [
+          html.a(
+            [attrs.href("https://github.com/arnarg/gliew_demo")],
+            [html.img([attrs.src("/github.svg"), attrs.alt("Github logo")])],
+          ),
+        ],
+      ),
+    ],
+  )
 }
 
 // Metrics section
-fn metrics(context: DashboardContext) {
+fn metrics(context: MetricsContext) {
   html.div(
     [attrs.class("metrics")],
     [
       html.div_text([attrs.class("title")], "Server Metrics"),
-      metrics.metrics(MetricsContext(context.monitor)),
+      metrics.metrics(context),
     ],
   )
 }

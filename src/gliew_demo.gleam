@@ -8,8 +8,8 @@ import nakai/html
 import nakai/html/attrs
 import gliew
 import gliew_demo/page.{DashboardContext}
-import gliew_demo/component/metrics
-import gliew_demo/component/observer
+import gliew_demo/service/monitor
+import gliew_demo/service/observer
 
 fn layout(content: html.Node(a)) -> html.Node(a) {
   html.Html(
@@ -23,6 +23,7 @@ fn layout(content: html.Node(a)) -> html.Node(a) {
           attrs.content("width=device-width, initial-scale=1"),
         ]),
         gliew.script(),
+        html.Element(tag: "script", attrs: [attrs.src("app.js")], children: []),
       ]),
       html.Body(attrs: [], children: [content]),
     ],
@@ -30,7 +31,7 @@ fn layout(content: html.Node(a)) -> html.Node(a) {
 }
 
 pub fn main() {
-  let assert Ok(monitor) = metrics.start_monitor(1000)
+  let assert Ok(monitor) = monitor.start_monitor(1000)
   let assert Ok(observer) = observer.start_observer(1000)
 
   let assert Ok(_) =
@@ -41,6 +42,10 @@ pub fn main() {
         case req.method, request.path_segments(req) {
           // Get style.css
           Get, ["style.css"] -> stylesheet()
+          // Get app.js
+          Get, ["app.js"] -> js("app")
+          // Get github.svg
+          Get, ["github.svg"] -> svg("github")
           // Get "/"
           Get, [] ->
             page.dashboard(DashboardContext(monitor, observer))
@@ -69,4 +74,36 @@ fn stylesheet() {
     bit_string.to_string(css)
     |> result.unwrap(""),
   )
+}
+
+fn svg(name: String) {
+  let assert Ok(priv) = priv_directory("gliew_demo")
+
+  case file.read_bits(priv <> "/static/" <> name <> ".svg") {
+    Ok(data) ->
+      gliew.response(200)
+      |> gliew.with_body(
+        bit_string.to_string(data)
+        |> result.unwrap(""),
+      )
+    _ ->
+      gliew.response(404)
+      |> gliew.with_body("not found")
+  }
+}
+
+fn js(name: String) {
+  let assert Ok(priv) = priv_directory("gliew_demo")
+
+  case file.read_bits(priv <> "/static/" <> name <> ".js") {
+    Ok(data) ->
+      gliew.response(200)
+      |> gliew.with_body(
+        bit_string.to_string(data)
+        |> result.unwrap(""),
+      )
+    _ ->
+      gliew.response(404)
+      |> gliew.with_body("not found")
+  }
 }
